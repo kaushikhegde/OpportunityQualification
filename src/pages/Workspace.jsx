@@ -10,8 +10,6 @@ import { IconCheck, IconLock, IconArrowLeft } from '../components/icons.jsx'
 import DetailsStage from './stages/DetailsStage.jsx'
 import EarlyQualStage from './stages/EarlyQualStage.jsx'
 import SuccessOutcomesStage from './stages/SuccessOutcomesStage.jsx'
-import RainmakerStage from './stages/RainmakerStage.jsx'
-import FedGovtStage from './stages/FedGovtStage.jsx'
 import RecommendationStage from './stages/RecommendationStage.jsx'
 
 function buildStages(opp) {
@@ -20,17 +18,10 @@ function buildStages(opp) {
   const isStop = e.outcome?.key === 'STOP'
   const drbRequired = Number(opp.estimatedValue) > DRB_THRESHOLD
 
-  if (opp.framework === 'rainmaker') {
+  if (opp.framework === 'outcomes') {
     return [
       { id: 'details', label: 'Details', done: !!opp.clientName },
-      { id: 'rainmaker', label: 'RAINMAKER', done: false },
-      { id: 'recommendation', label: 'Recommendation', done: false },
-    ]
-  }
-  if (opp.framework === 'fedgovt') {
-    return [
-      { id: 'details', label: 'Details', done: !!opp.clientName },
-      { id: 'fedgovt', label: 'Fed Govt Qualification', done: false },
+      { id: 'success', label: 'Improving Outcomes', done: false },
       { id: 'recommendation', label: 'Recommendation', done: false },
     ]
   }
@@ -39,7 +30,7 @@ function buildStages(opp) {
     { id: 'early', label: 'Early Qualification', done: e.complete },
     {
       id: 'success',
-      label: 'Success Outcomes (DRB)',
+      label: 'Improving Outcomes (DRB)',
       done: false,
       locked: isStop || !isGo,
       hint: drbRequired ? 'Required — deal above $1m' : 'Optional at this value',
@@ -125,8 +116,6 @@ export default function Workspace() {
       {active === 'details' && <DetailsStage {...commonProps} onDelete={() => { remove(opp.id); navigate('/') }} />}
       {active === 'early' && <EarlyQualStage {...commonProps} />}
       {active === 'success' && <SuccessOutcomesStage {...commonProps} />}
-      {active === 'rainmaker' && <RainmakerStage {...commonProps} />}
-      {active === 'fedgovt' && <FedGovtStage {...commonProps} />}
       {active === 'recommendation' && <RecommendationStage {...commonProps} />}
     </Layout>
   )

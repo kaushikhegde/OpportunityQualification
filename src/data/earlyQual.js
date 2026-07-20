@@ -2,9 +2,10 @@
 // "1. EARLY QUALIFICATION TOOL" sheet.
 //
 // Each question carries its answer options with the manual scoring rubric baked
-// in as point values. Some options are hard disqualifiers: selecting them forces
-// the STOP outcome regardless of the total score (per the "How to manually score"
-// notes in column Q of the sheet).
+// in as point values. Point values are not surfaced in the UI — the outcome comes
+// from the total score alone. (The workbook's hard disqualifiers, which forced a
+// STOP regardless of score, are deliberately not implemented; they may return as a
+// phase two amendment.)
 
 export const EARLY_QUAL_CATEGORIES = [
   {
@@ -15,7 +16,7 @@ export const EARLY_QUAL_CATEGORIES = [
         id: 'q1',
         n: 1,
         text: 'Does this opportunity support our vision and purpose for Scyne and our strategic priorities?',
-        help: '(a) Yes to vision and purpose — 2 points · (b) Yes to strategic priorities — 2 points · (c) Yes to both — 6 points',
+        help: 'Alignment to both our vision and purpose and our strategic priorities is the strongest position. Alignment to only one is partial — say so rather than rounding up.',
         max: 6,
         options: [
           { value: 'both', label: 'Yes to both vision/purpose and strategic priorities', points: 6 },
@@ -34,7 +35,7 @@ export const EARLY_QUAL_CATEGORIES = [
         id: 'q2',
         n: 2,
         text: 'Has there been any interaction with the client in the past 30 days?',
-        help: 'Yes — 2 points · No — 0 points',
+        help: 'Count substantive two-way contact — a meeting, call or email exchange with a client stakeholder — in the last 30 days.',
         max: 2,
         options: [
           { value: 'yes', label: 'Yes', points: 2 },
@@ -45,25 +46,25 @@ export const EARLY_QUAL_CATEGORIES = [
         id: 'q3',
         n: 3,
         text: 'Do we have a track record of delivering successfully with this client?',
-        help: '(a) Yes with this client, yes in this space — 4 points · (b) Yes with this client, not in this space — 2 points · (c) Not with this client, yes in this space — 2 points · (d) Not with this client, not in this space — 0 points',
+        help: '“This space” means comparable work in the same domain or service area. Answer both dimensions honestly: the client relationship, and relevant credentials.',
         max: 4,
         options: [
           { value: 'client_space', label: 'Yes with this client, yes in this space', points: 4 },
           { value: 'client_only', label: 'Yes with this client, not in this space', points: 2 },
           { value: 'space_only', label: 'Not with this client, yes in this space', points: 2 },
-          { value: 'neither', label: 'Not with this client, not in this space', points: 0, disqualify: true },
+          { value: 'neither', label: 'Not with this client, not in this space', points: 0 },
         ],
       },
       {
         id: 'q4',
         n: 4,
         text: 'Did we (i) have foresight about the opportunity and (ii) did we or can we proactively shape this opportunity with the client?',
-        help: '(a) Yes to both — 4 points · (b) Yes to (i) only — 1 point · (c) Yes to (ii) only — 1 point',
+        help: 'Foresight means we knew about the opportunity before it reached the market. Shaping means we have influenced, or can still influence, the client’s requirements or approach.',
         max: 4,
         options: [
           { value: 'both', label: 'Yes to both foresight and shaping', points: 4 },
           { value: 'foresight', label: 'Yes to foresight (i) only', points: 1 },
-          { value: 'shaping', label: 'Yes to shaping (ii) only', points: 1, disqualify: true },
+          { value: 'shaping', label: 'Yes to shaping (ii) only', points: 1 },
           { value: 'neither', label: 'No to both', points: 0 },
         ],
       },
@@ -71,11 +72,11 @@ export const EARLY_QUAL_CATEGORIES = [
         id: 'q5',
         n: 5,
         text: 'Do we have the right relationships with key decision makers including the CEO / Board / Management / Evaluation Committee?',
-        help: 'Yes — 2 points · No — 0 points',
+        help: 'Consider whether we have genuine access to the people who will make the decision — not only the people running the process.',
         max: 2,
         options: [
           { value: 'yes', label: 'Yes', points: 2 },
-          { value: 'no', label: 'No', points: 0, disqualify: true },
+          { value: 'no', label: 'No', points: 0 },
         ],
       },
     ],
@@ -88,7 +89,7 @@ export const EARLY_QUAL_CATEGORIES = [
         id: 'q6',
         n: 6,
         text: "Do we have a clear understanding of the client's need, requirements and assessment criteria?",
-        help: 'Yes — 2 points · No — 0 points',
+        help: 'A clear understanding means we could articulate the client’s need, requirements and assessment criteria back to them without guessing.',
         max: 2,
         options: [
           { value: 'yes', label: 'Yes', points: 2 },
@@ -99,7 +100,7 @@ export const EARLY_QUAL_CATEGORIES = [
         id: 'q7',
         n: 7,
         text: 'Does this opportunity leverage multiple capabilities to create client value and allow us to work through multiple phases of the life cycle to deliver valued outcomes?',
-        help: 'Yes — 2 points · No — 0 points',
+        help: 'Consider whether the work draws on more than one capability, and whether it opens later phases of the lifecycle rather than a single discrete piece.',
         max: 2,
         options: [
           { value: 'yes', label: 'Yes', points: 2 },
@@ -110,7 +111,7 @@ export const EARLY_QUAL_CATEGORIES = [
         id: 'q8',
         n: 8,
         text: 'Does this opportunity leverage our accelerator/assets and our Alliance partnerships to strengthen our value proposition?',
-        help: 'Yes — 2 points · No — 0 points',
+        help: 'Consider whether our accelerators, assets or Alliance partnerships would make a material difference to the proposition.',
         max: 2,
         options: [
           { value: 'yes', label: 'Yes', points: 2 },
@@ -127,7 +128,7 @@ export const EARLY_QUAL_CATEGORIES = [
         id: 'q9',
         n: 9,
         text: '(i) Does the client have approval, available resources and budget, and genuine intent? (ii) And can we provide a solution within the specified or anticipated budget?',
-        help: '(a) Yes to both — 4 points · (b) Yes to (i) — 2 points · (c) Yes to (ii) — 2 points',
+        help: '(i) is about the client — approval, available resources, budget and genuine intent to proceed. (ii) is about us — whether we can deliver a credible solution within that budget.',
         max: 4,
         options: [
           { value: 'both', label: 'Yes to both', points: 4 },
@@ -140,7 +141,7 @@ export const EARLY_QUAL_CATEGORIES = [
         id: 'q10',
         n: 10,
         text: 'Does this opportunity meet both our risk and financial expectations?',
-        help: 'Yes — 2 points · No — 0 points',
+        help: 'Consider both dimensions: the risk profile we would be taking on, and whether the commercials meet our financial expectations.',
         max: 2,
         options: [
           { value: 'yes', label: 'Yes', points: 2 },
@@ -157,7 +158,7 @@ export const EARLY_QUAL_CATEGORIES = [
         id: 'q11',
         n: 11,
         text: 'Does our bid team have the capacity to pursue this opportunity?',
-        help: 'Yes — 2 points · No — 0 points',
+        help: 'Capacity here means the people to run the pursuit itself, not the delivery team.',
         max: 2,
         options: [
           { value: 'yes', label: 'Yes', points: 2 },
@@ -168,7 +169,7 @@ export const EARLY_QUAL_CATEGORIES = [
         id: 'q12',
         n: 12,
         text: 'Do we have the right team with the right expertise to deliver the work?',
-        help: 'Yes — 2 points · No — 0 points',
+        help: 'Consider whether the delivery expertise exists in the team today, or would need to be built or brought in.',
         max: 2,
         options: [
           { value: 'yes', label: 'Yes', points: 2 },
@@ -185,7 +186,7 @@ export const EARLY_QUAL_CATEGORIES = [
         id: 'q13',
         n: 13,
         text: 'Are we positioned strongly against competitors?',
-        help: 'Yes — 2 points · No — 0 points',
+        help: 'Consider our position relative to the likely field, including any incumbent.',
         max: 2,
         options: [
           { value: 'yes', label: 'Yes', points: 2 },
@@ -196,7 +197,7 @@ export const EARLY_QUAL_CATEGORIES = [
         id: 'q14',
         n: 14,
         text: 'At this stage, can we identify and clearly articulate our key differentiators?',
-        help: 'Yes — 4 points · No — 0 points',
+        help: 'Differentiators must be specific and articulable now — aspirational ones do not count.',
         max: 4,
         options: [
           { value: 'yes', label: 'Yes', points: 4 },

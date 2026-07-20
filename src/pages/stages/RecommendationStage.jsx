@@ -1,9 +1,10 @@
 import { Card, Field } from '../../components/ui.jsx'
 import QualAnalytics from '../../components/Analytics.jsx'
 import { STANDING_GUIDANCE } from '../../data/earlyQual.js'
-import { scoreEarlyQual, scoreRainmaker, scoreSuccessOutcomes, formatCurrency } from '../../lib/scoring.js'
+import { scoreEarlyQual, scoreSuccessOutcomes, formatCurrency } from '../../lib/scoring.js'
 import { DRB_THRESHOLD } from '../../data/successOutcomes.js'
-import { IconCheckCircle, IconAlert, IconBook } from '../../components/icons.jsx'
+import { buildEarlyQualEmail, buildOutcomesEmail, sendMail, DRB_CONTACT } from '../../lib/notify.js'
+import { IconCheckCircle, IconAlert, IconBook, IconMail } from '../../components/icons.jsx'
 
 function VerdictBanner({ tone, label, summary }) {
   const Icon = tone === 'green' ? IconCheckCircle : IconAlert
@@ -33,7 +34,7 @@ function StandardRecommendation({ opp }) {
       {drbRequired && (
         <div className="banner amber">
           <span className="ico"><IconAlert size={18} /></span>
-          <div><strong>DRB required.</strong> This is a GO on a deal above $1m ({formatCurrency(opp.estimatedValue)}). Complete the Success Outcomes step — currently {success.weightedConfidence}% weighted confidence ({success.greenCount}/{success.total} milestones green).</div>
+          <div><strong>DRB required.</strong> This is a GO on a deal above $1m ({formatCurrency(opp.estimatedValue)}). Complete the Improving Outcomes step — currently {success.weightedConfidence}% weighted confidence ({success.greenCount}/{success.total} milestones green).</div>
         </div>
       )}
 
@@ -46,30 +47,57 @@ function StandardRecommendation({ opp }) {
   )
 }
 
-function RainmakerRecommendation({ opp }) {
-  const r = scoreRainmaker(opp.rainmakerAnswers)
-  if (r.answered === 0) return <p className="italic-muted">Complete the RAINMAKER checklist to generate a recommendation.</p>
+function OutcomesRecommendation({ opp }) {
+  const s = scoreSuccessOutcomes(opp.successStatus)
+  if (s.greenCount === 0) {
+    return <p className="italic-muted">Score the Improving Outcomes milestones to generate a recommendation.</p>
+  }
+  const tone = s.weightedConfidence >= 70 ? 'green' : s.weightedConfidence >= 40 ? 'amber' : 'red'
+  const summary =
+    tone === 'green'
+      ? 'Strong position — take this to the Deal Review Board.'
+      : tone === 'amber'
+        ? 'Partly qualified — close the outstanding milestones before the DRB.'
+        : 'Weak position — most milestones are not yet green.'
   return (
     <>
-      <VerdictBanner tone={r.band.tone} label={`${r.band.label} · ${r.pct}% Yes`} summary={r.band.note} />
-      <QualAnalytics opp={opp} />
-      <Card title="Scoring guide">
-        <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--text-muted)', fontSize: 13.5 }}>
-          <li>80–100% Yes → Strong Bid – proceed with confidence</li>
-          <li>60–79% Yes → Conditional Bid – address gaps before proceeding</li>
-          <li>40–59% Yes → Caution – seek senior approval before committing</li>
-          <li>Below 40% Yes → No Bid – decline the opportunity</li>
-        </ul>
+      <VerdictBanner
+        tone={tone}
+        label={`${s.weightedConfidence}% weighted confidence · ${s.greenCount} / ${s.total} milestones green`}
+        summary={summary}
+      />
+      <Card title="Recommended next steps">
+        <p style={{ margin: 0 }}>
+          Work the {s.total - s.greenCount} milestone{s.total - s.greenCount === 1 ? '' : 's'} still short of green, and
+          record supporting evidence against each in the Improving Outcomes step.
+        </p>
       </Card>
     </>
   )
 }
 
-function FedGovtRecommendation({ opp }) {
-  const rec = opp.fedGovtResponses?.recommendation
+// Nothing leaves the browser on its own — this hands a pre-filled summary to the
+// user's mail client so the outcome, DRB trigger and any support request reach
+// someone who can act on them.
+function SendCard({ opp }) {
+  const e = scoreEarlyQual(opp.earlyAnswers)
+  const scored = opp.framework === 'outcomes' ? true : !!e.outcome
+  const drbRequired = e.outcome?.key === 'GO' && Number(opp.estimatedValue) > DRB_THRESHOLD
+  const build = opp.framework === 'outcomes' ? buildOutcomesEmail : buildEarlyQualEmail
+
   return (
-    <Card title="Go / no-go recommendation">
-      {rec ? <p style={{ margin: 0 }}>{rec}</p> : <p className="italic-muted">Record your recommendation in the Fed Govt Qualification step.</p>}
+    <Card title="Send to DRB" icon={<IconMail />}>
+      <p className="muted" style={{ fontSize: 12.5, marginTop: 0 }}>
+        {drbRequired
+          ? 'This deal requires DRB approval. Send the summary so a session can be scheduled.'
+          : 'Send a summary of this qualification, including any support or investment you have asked for.'}
+      </p>
+      <button className="btn btn-primary" disabled={!scored} onClick={() => sendMail(build(opp))} style={{ width: '100%' }}>
+        <IconMail size={15} /> Email summary to DRB
+      </button>
+      <p className="muted" style={{ fontSize: 11.5, marginBottom: 0, marginTop: 10 }}>
+        Opens in your mail client, addressed to {DRB_CONTACT}. You send it — nothing is sent automatically.
+      </p>
     </Card>
   )
 }
@@ -78,9 +106,9 @@ export default function RecommendationStage({ opp, patch }) {
   return (
     <div className="two-col">
       <div>
-        {opp.framework === 'rainmaker' && <RainmakerRecommendation opp={opp} />}
-        {opp.framework === 'fedgovt' && <FedGovtRecommendation opp={opp} />}
-        {opp.framework === 'standard' && <StandardRecommendation opp={opp} />}
+        {opp.framework === 'outcomes'
+          ? <OutcomesRecommendation opp={opp} />
+          : <StandardRecommendation opp={opp} />}
 
         <Card title="What support / investment do you need?">
           <Field label="Strengthen our offering & increase the chance of winning">
@@ -95,6 +123,8 @@ export default function RecommendationStage({ opp, patch }) {
       </div>
 
       <div className="rail">
+        <SendCard opp={opp} />
+
         <Card title="Standing guidance" icon={<IconBook />}>
           {STANDING_GUIDANCE.map((g, i) => (
             <div key={i} style={{ marginBottom: i === 0 ? 14 : 0 }}>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Card } from '../../components/ui.jsx'
 import { EARLY_QUAL_CATEGORIES } from '../../data/earlyQual.js'
 import { scoreEarlyQual } from '../../lib/scoring.js'
-import { IconAlert, IconSpark, IconChevron } from '../../components/icons.jsx'
+import { IconSpark, IconChevron } from '../../components/icons.jsx'
 
 function QuestionCard({ q, value, comment, onAnswer, onComment }) {
   const [showHelp, setShowHelp] = useState(false)
@@ -13,7 +13,7 @@ function QuestionCard({ q, value, comment, onAnswer, onComment }) {
         {q.text}
       </div>
       <button className="qhelp-toggle" onClick={() => setShowHelp((s) => !s)}>
-        {showHelp ? 'Hide scoring guide' : 'How to score'}
+        {showHelp ? 'Hide guidance' : 'How to answer'}
       </button>
       {showHelp && <div className="qhelp" style={{ marginTop: 6 }}>{q.help}</div>}
 
@@ -23,23 +23,15 @@ function QuestionCard({ q, value, comment, onAnswer, onComment }) {
           return (
             <button
               key={o.value}
-              className={`opt ${selected ? 'selected' : ''} ${o.disqualify ? 'dq' : ''}`}
+              className={`opt ${selected ? 'selected' : ''}`}
               onClick={() => onAnswer(selected ? '' : o.value)}
             >
               <span className="radio" />
               <span>{o.label}</span>
-              <span className="pts">{o.points} pt{o.points === 1 ? '' : 's'}</span>
             </button>
           )
         })}
       </div>
-
-      {value && q.options.find((o) => o.value === value)?.disqualify && (
-        <div className="dq-alert">
-          <IconAlert size={16} />
-          This answer forces the outcome to STOP — Do Not Proceed, regardless of total score.
-        </div>
-      )}
 
       <div className="commentary">
         <textarea
@@ -56,18 +48,16 @@ function QuestionCard({ q, value, comment, onAnswer, onComment }) {
 
 function CategoryBlock({ cat, answers, comments, patch, defaultOpen }) {
   const [open, setOpen] = useState(defaultOpen)
-  const subtotal = cat.questions.reduce((sum, q) => {
-    const opt = q.options.find((o) => o.value === answers[q.id])
-    return sum + (opt ? opt.points : 0)
-  }, 0)
-  const catMax = cat.questions.reduce((s, q) => s + q.max, 0)
+  // Progress, not points — per-question scores are deliberately hidden so answers
+  // aren't reverse-engineered towards a desired outcome.
+  const answered = cat.questions.filter((q) => q.options.some((o) => o.value === answers[q.id])).length
 
   return (
     <Card className="qcat">
       <div className="qcat-head" onClick={() => setOpen((o) => !o)}>
         <h3>{cat.name}</h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span className="qcat-sub">{subtotal} / {catMax} pts</span>
+          <span className="qcat-sub">{answered} / {cat.questions.length} answered</span>
           <span style={{ transform: open ? 'rotate(90deg)' : 'none', color: 'var(--text-muted)', transition: '0.15s' }}>
             <IconChevron size={16} />
           </span>
@@ -103,15 +93,7 @@ function ScoreCard({ result }) {
       </div>
       <hr className="hr" />
       {result.outcome ? (
-        <>
-          <span className={`pill ${result.outcome.tone}`}>{result.outcome.label}</span>
-          {result.disqualified && (
-            <div className="dq-alert" style={{ marginTop: 12 }}>
-              <IconAlert size={16} />
-              A hard disqualifier is active — outcome forced to STOP.
-            </div>
-          )}
-        </>
+        <span className={`pill ${result.outcome.tone}`}>{result.outcome.label}</span>
       ) : (
         <span className="italic-muted">Answer questions to see the outcome.</span>
       )}
@@ -133,7 +115,7 @@ export default function EarlyQualStage({ opp, patch, goTo }) {
         <div className="spark"><IconSpark size={20} /></div>
         <div className="body">
           <h3>Early stage ‘stop / go’ checklist</h3>
-          <p>Answer the 14 criteria below. The score and outcome update live — some answers are hard disqualifiers that force a STOP.</p>
+          <p>Answer the 14 criteria below. The score and outcome update live as you go.</p>
         </div>
         {result.outcome && <span className={`pill ${result.outcome.tone}`}>{result.outcome.label}</span>}
       </div>

@@ -1,4 +1,4 @@
-// Improving Success Outcomes — the 12 milestones from the
+// Improving Outcomes — the 12 milestones from the
 // "2. IMPROVING SUCCESS OUTCOMES" sheet, used to prepare for the Deal Review
 // Board (DRB) once a GO decision is made on a deal above $1m.
 //
@@ -165,5 +165,5 @@ export const SUCCESS_MILESTONES = [
 
 export const SUCCESS_MAX_WEIGHT = SUCCESS_MILESTONES.reduce((s, m) => s + m.weighting, 0)
 
-// The $ threshold above which the DRB / Improving Success Outcomes step is required.
+// The $ threshold above which the DRB / Improving Outcomes step is required.
 export const DRB_THRESHOLD = 1_000_000

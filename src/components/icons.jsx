@@ -81,3 +81,6 @@ export const IconSearch = (p) => (
 export const IconClose = (p) => (
   <S {...p}><path d="M18 6 6 18M6 6l12 12" /></S>
 )
+export const IconMail = (p) => (
+  <S {...p}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3.5 6.5l8.5 6 8.5-6" /></S>
+)

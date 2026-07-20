@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Card } from '../../components/ui.jsx'
 import { SUCCESS_MILESTONES } from '../../data/successOutcomes.js'
 import { scoreSuccessOutcomes } from '../../lib/scoring.js'
-import { IconSpark, IconTrophy } from '../../components/icons.jsx'
+import { buildOutcomesEmail, sendMail, DRB_CONTACT } from '../../lib/notify.js'
+import { IconSpark, IconTrophy, IconMail } from '../../components/icons.jsx'
 
 function Milestone({ m, status, comment, onStatus, onComment }) {
   const [open, setOpen] = useState(false)
@@ -56,7 +57,7 @@ export default function SuccessOutcomesStage({ opp, patch, goTo }) {
       <div className="sentinel" style={{ marginBottom: 18 }}>
         <div className="spark"><IconSpark size={20} /></div>
         <div className="body">
-          <h3>Improving Success Outcomes — DRB preparation</h3>
+          <h3>Improving Outcomes — DRB preparation</h3>
           <p>Score the opportunity against all 12 weighted milestones (10 sales milestones plus 2 Scyne-internal). Complete this in advance of the Deal Review Board session.</p>
         </div>
       </div>
@@ -82,9 +83,18 @@ export default function SuccessOutcomesStage({ opp, patch, goTo }) {
         ))}
       </div>
 
-      <button className="btn btn-primary" onClick={() => goTo('recommendation')} style={{ marginTop: 18 }}>
-        View recommendation →
-      </button>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 18 }}>
+        <button className="btn btn-primary" onClick={() => goTo('recommendation')}>
+          View recommendation →
+        </button>
+        <button className="btn" disabled={result.greenCount === 0} onClick={() => sendMail(buildOutcomesEmail(opp))}>
+          <IconMail size={15} /> Email milestones to DRB
+        </button>
+      </div>
+      <p className="muted" style={{ fontSize: 11.5, marginTop: 10 }}>
+        Sending opens your mail client with the milestone summary addressed to {DRB_CONTACT}, so it can be read ahead of
+        the DRB session. Nothing is sent automatically.
+      </p>
     </>
   )
 }

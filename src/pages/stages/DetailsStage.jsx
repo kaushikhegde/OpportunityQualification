@@ -9,9 +9,8 @@ import { opportunityToSeed } from '../../data/salesforceOpportunities.js'
 import { IconEdit, IconLink, IconTrash, IconAlert, IconSearch } from '../../components/icons.jsx'
 
 const FRAMEWORKS = [
-  { value: 'standard', label: 'Standard' },
-  { value: 'fedgovt', label: 'Federal Govt' },
-  { value: 'rainmaker', label: 'RAINMAKER' },
+  { value: 'standard', label: 'Early Go/No-Go Checklist' },
+  { value: 'outcomes', label: 'Improving Outcomes' },
 ]
 
 function Synced({ label, children }) {
@@ -102,7 +101,7 @@ export default function DetailsStage({ opp, patch, goTo, onDelete }) {
           <div className="banner amber">
             <span className="ico"><IconAlert size={18} /></span>
             <div>
-              <strong>Deal above $1m.</strong> A Deal Review Board (DRB) approval is required to proceed — the “Success Outcomes” step becomes mandatory once you reach a GO decision.
+              <strong>Deal above $1m.</strong> A Deal Review Board (DRB) approval is required to proceed — the “Improving Outcomes” step becomes mandatory once you reach a GO decision.
             </div>
           </div>
         )}
@@ -136,7 +135,7 @@ export default function DetailsStage({ opp, patch, goTo, onDelete }) {
         <button
           className="btn btn-primary"
           disabled={!linked}
-          onClick={() => goTo(opp.framework === 'rainmaker' ? 'rainmaker' : opp.framework === 'fedgovt' ? 'fedgovt' : 'early')}
+          onClick={() => goTo(opp.framework === 'outcomes' ? 'success' : 'early')}
         >
           Continue to qualification →
         </button>

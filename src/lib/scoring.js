@@ -4,11 +4,6 @@ import {
   EARLY_QUAL_MAX,
   EARLY_OUTCOMES,
 } from '../data/earlyQual.js'
-import {
-  RAINMAKER_QUESTIONS,
-  RAINMAKER_DIMENSIONS,
-  RAINMAKER_BANDS,
-} from '../data/rainmaker.js'
 import { SUCCESS_MILESTONES, SUCCESS_MAX_WEIGHT } from '../data/successOutcomes.js'
 
 // ---- Early Qualification -------------------------------------------------
@@ -16,7 +11,6 @@ import { SUCCESS_MILESTONES, SUCCESS_MAX_WEIGHT } from '../data/successOutcomes.
 export function scoreEarlyQual(answers = {}) {
   let score = 0
   let answered = 0
-  let disqualified = false
 
   for (const q of EARLY_QUAL_QUESTIONS) {
     const value = answers[q.id]
@@ -25,12 +19,11 @@ export function scoreEarlyQual(answers = {}) {
     if (!option) continue
     answered += 1
     score += option.points
-    if (option.disqualify) disqualified = true
   }
 
+  // Outcome comes from the total score alone — no answer forces a STOP on its own.
   let outcomeKey
-  if (disqualified) outcomeKey = 'STOP'
-  else if (answered === 0) outcomeKey = null
+  if (answered === 0) outcomeKey = null
   else if (score <= 10) outcomeKey = 'STOP'
   else if (score <= 20) outcomeKey = 'PAUSE'
   else outcomeKey = 'GO'
@@ -40,7 +33,6 @@ export function scoreEarlyQual(answers = {}) {
     max: EARLY_QUAL_MAX,
     answered,
     total: EARLY_QUAL_QUESTIONS.length,
-    disqualified,
     outcome: outcomeKey ? EARLY_OUTCOMES[outcomeKey] : null,
     complete: answered === EARLY_QUAL_QUESTIONS.length,
   }
@@ -70,13 +62,9 @@ export function analyzeEarlyQual(answers = {}) {
 
   const strengths = []
   const gaps = []
-  const disqualifiers = []
   for (const cat of categories) {
     for (const it of cat.items) {
       if (!it.answered) continue
-      if (it.opt.disqualify) {
-        disqualifiers.push({ category: cat.name, text: it.q.text, label: it.opt.label })
-      }
       const ratio = it.q.max ? it.points / it.q.max : 0
       if (it.points > 0 && ratio >= 0.75) {
         strengths.push({ category: cat.name, text: it.q.text, label: it.opt.label, points: it.points, max: it.q.max })
@@ -88,41 +76,10 @@ export function analyzeEarlyQual(answers = {}) {
   strengths.sort((a, b) => b.points - a.points)
   gaps.sort((a, b) => b.max - b.points - (a.max - a.points))
 
-  return { categories, strengths, gaps, disqualifiers }
+  return { categories, strengths, gaps }
 }
 
-// Per-dimension breakdown of a RAINMAKER result (the 9 R-A-I-N-M-A-K-E-R groups).
-export function analyzeRainmaker(answers = {}) {
-  const dimensions = RAINMAKER_DIMENSIONS.map((d) => {
-    let yes = 0
-    let answered = 0
-    const items = d.questions.map((q) => {
-      const value = answers[q.id]
-      if (value === 'yes') {
-        yes += 1
-        answered += 1
-      } else if (value === 'no') {
-        answered += 1
-      }
-      return { q, value }
-    })
-    const total = d.questions.length
-    const pct = Math.round((yes / total) * 100)
-    const tone = pct >= 67 ? 'green' : pct >= 34 ? 'amber' : 'red'
-    return { id: d.id, letter: d.letter, name: d.name, yes, total, answered, pct, tone, items }
-  })
-
-  const strengths = dimensions.filter((d) => d.answered > 0 && d.yes === d.total)
-  const gaps = []
-  for (const d of dimensions) {
-    for (const it of d.items) {
-      if (it.value === 'no') gaps.push({ dimension: d.name, letter: d.letter, text: it.q.text })
-    }
-  }
-  return { dimensions, strengths, gaps }
-}
-
-// ---- Improving Success Outcomes ------------------------------------------
+// ---- Improving Outcomes ------------------------------------------
 
 export function scoreSuccessOutcomes(status = {}) {
   let greenWeight = 0
@@ -139,26 +96,6 @@ export function scoreSuccessOutcomes(status = {}) {
     total: SUCCESS_MILESTONES.length,
     weightedConfidence: pct,
   }
-}
-
-// ---- RAINMAKER -----------------------------------------------------------
-
-export function scoreRainmaker(answers = {}) {
-  let yes = 0
-  let answered = 0
-  for (const q of RAINMAKER_QUESTIONS) {
-    const v = answers[q.id]
-    if (v === 'yes') {
-      yes += 1
-      answered += 1
-    } else if (v === 'no') {
-      answered += 1
-    }
-  }
-  const total = RAINMAKER_QUESTIONS.length
-  const pct = Math.round((yes / total) * 100)
-  const band = RAINMAKER_BANDS.find((b) => pct >= b.min) || RAINMAKER_BANDS[RAINMAKER_BANDS.length - 1]
-  return { yes, no: answered - yes, answered, total, pct, band }
 }
 
 // ---- Shared --------------------------------------------------------------
@@ -183,13 +120,15 @@ export function formatDate(value) {
 // Which outcome tone/label to show for an opportunity, given its active framework.
 export function opportunityVerdict(opp) {
   if (!opp) return null
-  if (opp.framework === 'rainmaker') {
-    const r = scoreRainmaker(opp.rainmakerAnswers)
-    if (r.answered === 0) return null
-    return { label: r.band.label, tone: r.band.tone, detail: `${r.pct}% Yes` }
-  }
-  if (opp.framework === 'fedgovt') {
-    return null // narrative — no computed verdict
+  if (opp.framework === 'outcomes') {
+    const s = scoreSuccessOutcomes(opp.successStatus)
+    if (s.greenCount === 0) return null
+    const tone = s.weightedConfidence >= 70 ? 'green' : s.weightedConfidence >= 40 ? 'amber' : 'red'
+    return {
+      label: `${s.weightedConfidence}% weighted confidence`,
+      tone,
+      detail: `${s.greenCount} / ${s.total} green`,
+    }
   }
   const e = scoreEarlyQual(opp.earlyAnswers)
   if (!e.outcome) return null

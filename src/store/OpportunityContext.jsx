@@ -25,14 +25,11 @@ function blankOpportunity(seed = {}) {
     salesforceLink: '',
     salesforceStage: '',
     salesforceOwner: '',
-    framework: 'standard', // standard | fedgovt | rainmaker
+    framework: 'standard', // standard (Early Go/No-Go Checklist) | outcomes (Improving Outcomes)
     earlyAnswers: {},
     earlyCommentary: {},
     successStatus: {},
     successComments: {},
-    rainmakerAnswers: {},
-    rainmakerNotes: {},
-    fedGovtResponses: {},
     supportNeeds: '',
     createdAt: now,
     updatedAt: now,
@@ -82,14 +79,13 @@ function seedData() {
       salesforceLink: 'https://scyne.lightning.force.com/lightning/r/Opportunity/006Ab000013Aa1b/view',
       salesforceStage: 'Target',
       salesforceOwner: 'Tom Fielding',
-      framework: 'rainmaker',
+      framework: 'outcomes',
       rationale: 'Federal panel refresh; moderate relationship, competitive field.',
-      rainmakerAnswers: {
-        rm1: 'yes', rm2: 'no', rm3: 'no', rm4: 'yes', rm5: 'yes', rm6: 'yes',
-        rm7: 'yes', rm8: 'yes', rm9: 'no', rm10: 'yes', rm11: 'yes', rm12: 'yes',
-        rm13: 'yes', rm14: 'yes', rm15: 'yes', rm16: 'yes', rm17: 'no', rm18: 'yes',
-        rm19: 'yes', rm20: 'yes', rm21: 'yes', rm22: 'no', rm23: 'yes', rm24: 'yes',
-        rm25: 'yes', rm26: 'yes', rm27: 'yes',
+      successStatus: {
+        scyne_capability: 'green', scyne_economics: 'green', identify_pain: 'green',
+        uvp: 'not', decision_criteria: 'green', decision_process: 'not',
+        procurement_process: 'green', commercial_authority: 'not',
+        stakeholder_alignment: 'not', competition: 'not', compelling_event: 'green',
       },
     }),
   ]
@@ -101,7 +97,10 @@ function load() {
     if (!raw) return seedData()
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed)) return seedData()
-    return parsed
+    // Records saved before the framework list was cut back to two options.
+    return parsed.map((o) =>
+      o.framework === 'standard' || o.framework === 'outcomes' ? o : { ...o, framework: 'standard' },
+    )
   } catch {
     return seedData()
   }

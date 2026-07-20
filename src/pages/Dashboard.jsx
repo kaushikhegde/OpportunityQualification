@@ -4,32 +4,26 @@ import Layout from '../components/Layout.jsx'
 import { Card, Pill } from '../components/ui.jsx'
 import OpportunityPicker from '../components/OpportunityPicker.jsx'
 import { useOpportunities } from '../store/OpportunityContext.jsx'
-import { opportunityVerdict, formatCurrency, formatDate, scoreEarlyQual, scoreRainmaker } from '../lib/scoring.js'
+import { opportunityVerdict, formatCurrency, formatDate, scoreEarlyQual, scoreSuccessOutcomes } from '../lib/scoring.js'
 import { IconPlus, IconOpp } from '../components/icons.jsx'
 import { DRB_THRESHOLD } from '../data/successOutcomes.js'
 import { opportunityToSeed } from '../data/salesforceOpportunities.js'
 
 const FRAMEWORK_LABEL = {
-  standard: 'Standard',
-  fedgovt: 'Federal Govt',
-  rainmaker: 'RAINMAKER',
+  standard: 'Early Go/No-Go Checklist',
+  outcomes: 'Improving Outcomes',
 }
 
 function stageOf(opp) {
-  if (opp.framework === 'rainmaker') {
-    const r = scoreRainmaker(opp.rainmakerAnswers)
-    if (r.answered === 0) return 'Details'
-    return r.answered < r.total ? 'RAINMAKER assessment' : 'Recommendation'
-  }
-  if (opp.framework === 'fedgovt') {
-    const filled = Object.values(opp.fedGovtResponses || {}).filter((v) => v && v.trim()).length
-    if (filled === 0) return 'Details'
-    return filled < 6 ? 'Fed Govt qualification' : 'Recommendation'
+  if (opp.framework === 'outcomes') {
+    const s = scoreSuccessOutcomes(opp.successStatus)
+    if (s.greenCount === 0) return 'Details'
+    return s.greenCount < s.total ? 'Improving Outcomes' : 'Recommendation'
   }
   const e = scoreEarlyQual(opp.earlyAnswers)
   if (!e.outcome) return 'Details'
   if (e.outcome.key === 'GO' && Number(opp.estimatedValue) > DRB_THRESHOLD) {
-    return 'Success Outcomes (DRB)'
+    return 'Improving Outcomes (DRB)'
   }
   return 'Recommendation'
 }
